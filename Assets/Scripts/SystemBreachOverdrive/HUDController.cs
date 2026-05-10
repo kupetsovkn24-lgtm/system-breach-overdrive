@@ -15,6 +15,7 @@ namespace SystemBreachOverdrive
         private Text _timerText;
         private Text _statusText;
         private Text _progressText;
+        private Text _poolText;
         private Button _pauseButton;
         private Button _restartButton;
         private Button _menuButton;
@@ -129,6 +130,18 @@ namespace SystemBreachOverdrive
             }
 
             _progressText.text = total > 0 ? $"OBJECTIVE NODES: {connected}/{total}" : "OBJECTIVE NODES: -";
+        }
+
+        public void SetPoolStats(int active, int cached, int created, int reused)
+        {
+            if (_poolText == null)
+            {
+                return;
+            }
+
+            _poolText.text = created > 0
+                ? $"POOL A:{active} C:{cached} R:{reused}"
+                : "POOL: -";
         }
 
         public void SetPauseState(bool paused)
@@ -292,6 +305,8 @@ namespace SystemBreachOverdrive
             _statusText = CreateAnchoredLabel(topPanel, "StatusText", "", font, TextAnchor.MiddleRight, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-16f, 0f), new Vector2(250f, 0f));
             _progressText = CreateAnchoredLabel(topPanel, "ProgressText", "OBJECTIVE NODES: -", font, TextAnchor.MiddleCenter, new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -20f), new Vector2(420f, 0f));
             _progressText.fontSize = 16;
+            _poolText = CreateAnchoredLabel(topPanel, "PoolText", "POOL: -", font, TextAnchor.MiddleLeft, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(16f, -22f), new Vector2(420f, 0f));
+            _poolText.fontSize = 14;
 
             var buttonsPanel = CreatePanel(canvasObject.transform, "ButtonsPanel", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-240f, 50f), new Vector2(420f, 70f), new Color(0f, 0f, 0f, 0.35f));
 

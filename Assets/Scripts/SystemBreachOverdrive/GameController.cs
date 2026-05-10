@@ -229,6 +229,7 @@ namespace SystemBreachOverdrive
             _hud.SetRulesState(false);
             _gridManager.SetInteractionEnabled(true);
             UpdateObjectiveProgress();
+            UpdatePoolStats();
         }
 
         private void ShowStartScreen()
@@ -254,6 +255,7 @@ namespace SystemBreachOverdrive
             _hud.SetResultsState(false);
             _hud.SetRulesState(false);
             _hud.SetProgress(0, 0);
+            UpdatePoolStats();
         }
 
         private void StartFromContinue()
@@ -480,6 +482,7 @@ namespace SystemBreachOverdrive
             }
 
             UpdateObjectiveProgress();
+            UpdatePoolStats();
 
             if (_gridManager.IsLevelCompleted())
             {
@@ -635,6 +638,15 @@ namespace SystemBreachOverdrive
         {
             _gridManager.GetObjectiveProgress(out var connected, out var total);
             _hud.SetProgress(connected, total);
+        }
+
+        private void UpdatePoolStats()
+        {
+            _hud.SetPoolStats(
+                _gridManager.ActiveNodeCount,
+                _gridManager.CachedNodeCount,
+                _gridManager.CreatedNodeCount,
+                _gridManager.ReusedNodeCount);
         }
 
         private void PlayOneShot(AudioClip clip, float volumeScale)

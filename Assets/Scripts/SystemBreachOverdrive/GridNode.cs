@@ -119,6 +119,29 @@ namespace SystemBreachOverdrive
             RefreshVisual();
         }
 
+        public void ResetForPool()
+        {
+            if (_pulseRoutine != null)
+            {
+                StopCoroutine(_pulseRoutine);
+                _pulseRoutine = null;
+            }
+
+            Owner = null;
+            GridPosition = Vector2Int.zero;
+            RotationSteps = 0;
+            IsLocked = false;
+            IsSource = false;
+            IsExit = false;
+            Type = NodeType.Straight;
+            _isRequired = false;
+            _isOverloaded = false;
+            _isActive = false;
+            _isPulsing = false;
+
+            RefreshVisual();
+        }
+
         public void TriggerPulse(float durationSeconds)
         {
             if (_pulseRoutine != null)
@@ -148,6 +171,11 @@ namespace SystemBreachOverdrive
         private void EnsureVisuals()
         {
             var collider2D = GetComponent<BoxCollider2D>();
+            if (collider2D == null)
+            {
+                collider2D = gameObject.AddComponent<BoxCollider2D>();
+            }
+
             collider2D.size = Vector2.one * 0.95f;
 
             if (_bodyRenderer == null)

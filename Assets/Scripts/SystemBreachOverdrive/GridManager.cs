@@ -19,6 +19,7 @@ namespace SystemBreachOverdrive
 
         private GridNode[,] _nodes;
         private Transform _gridRoot;
+        private GridNodePool _nodePool;
         private System.Random _random;
         private int _gridSize;
         private bool _interactionEnabled;
@@ -31,6 +32,10 @@ namespace SystemBreachOverdrive
         public GridNode SourceNode { get; private set; }
         public IReadOnlyList<GridNode> ExitNodes => _exitNodes;
         public IReadOnlyList<GridNode> RequiredNodes => _requiredNodes;
+        public int ActiveNodeCount => _nodePool != null ? _nodePool.ActiveCount : _allNodes.Count;
+        public int CachedNodeCount => _nodePool != null ? _nodePool.CachedCount : 0;
+        public int CreatedNodeCount => _nodePool != null ? _nodePool.CreatedCount : _allNodes.Count;
+        public int ReusedNodeCount => _nodePool != null ? _nodePool.ReusedCount : 0;
 
         private void Update()
         {
@@ -298,30 +303,29 @@ namespace SystemBreachOverdrive
 
         private void EnsureRoot()
         {
-            if (_gridRoot != null)
+            if (_gridRoot == null)
             {
-                return;
+                var root = new GameObject("GridRoot");
+                root.transform.SetParent(transform, false);
+                _gridRoot = root.transform;
             }
 
-            var root = new GameObject("GridRoot");
-            root.transform.SetParent(transform, false);
-            _gridRoot = root.transform;
+            if (_nodePool == null)
+            {
+                _nodePool = new GridNodePool(_gridRoot);
+            }
         }
 
         private void ClearGrid()
         {
-            if (_gridRoot == null)
+            if (_gridRoot == null || _nodePool == null)
             {
                 return;
             }
 
-            for (var i = _gridRoot.childCount - 1; i >= 0; i--)
+            for (var i = 0; i < _allNodes.Count; i++)
             {
-                var child = _gridRoot.GetChild(i);
-                if (child != null)
-                {
-                    Destroy(child.gameObject);
-                }
+                _nodePool.Release(_allNodes[i]);
             }
 
             _allNodes.Clear();
@@ -423,11 +427,9 @@ namespace SystemBreachOverdrive
             {
                 for (var x = 0; x < _gridSize; x++)
                 {
-                    var nodeObject = new GameObject($"Node_{x}_{y}");
-                    nodeObject.transform.SetParent(_gridRoot, false);
-                    nodeObject.transform.localPosition = new Vector3(x * CellSpacing - offset, y * CellSpacing - offset, 0f);
-
-                    var node = nodeObject.AddComponent<GridNode>();
+                    var node = _nodePool.Get(
+                        $"Node_{x}_{y}",
+                        new Vector3(x * CellSpacing - offset, y * CellSpacing - offset, 0f));
                     var blueprintNode = blueprint[x, y];
 
                     node.Initialize(
