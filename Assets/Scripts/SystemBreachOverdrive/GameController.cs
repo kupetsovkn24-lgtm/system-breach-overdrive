@@ -31,6 +31,7 @@ namespace SystemBreachOverdrive
         private bool _isSettingsOpen;
         private bool _isResultsOpen;
         private bool _isRulesOpen;
+        private bool _isLevelSelectOpen;
         private int _rotationCount;
         private int _quickCombo = 1;
         private int _levelScore;
@@ -90,6 +91,10 @@ namespace SystemBreachOverdrive
                 StartFromContinue,
                 StartNewGame,
                 ResetProgress,
+                OpenLevelSelect,
+                StartSelectedLevel,
+                CloseLevelSelect,
+                ExitGame,
                 OpenSettings,
                 CloseSettings,
                 SetMasterVolume,
@@ -118,6 +123,7 @@ namespace SystemBreachOverdrive
         private void HandleNodeRotated(GridNode node)
         {
             _rotationCount++;
+            _hud.SetRunStats(_rotationCount, _totalScore);
             PlayOneShot(_rotateClip, 0.35f);
 
             if (node != null && node.IsOverloaded)
@@ -141,6 +147,11 @@ namespace SystemBreachOverdrive
                 if (IsEscapePressed() && _isRulesOpen)
                 {
                     CloseRules();
+                }
+
+                if (IsEscapePressed() && _isLevelSelectOpen)
+                {
+                    CloseLevelSelect();
                 }
 
                 return;
@@ -206,6 +217,7 @@ namespace SystemBreachOverdrive
             _isSettingsOpen = false;
             _isResultsOpen = false;
             _isRulesOpen = false;
+            _isLevelSelectOpen = false;
             SetPaused(false);
             _isMenuOpen = false;
             _levelActive = true;
@@ -227,6 +239,8 @@ namespace SystemBreachOverdrive
             _hud.SetSettingsState(false);
             _hud.SetResultsState(false);
             _hud.SetRulesState(false);
+            _hud.SetLevelSelectState(false, LoadUnlockedLevel(), _levels.Count);
+            _hud.SetRunStats(_rotationCount, _totalScore);
             _gridManager.SetInteractionEnabled(true);
             UpdateObjectiveProgress();
             UpdatePoolStats();
@@ -254,7 +268,9 @@ namespace SystemBreachOverdrive
             _hud.SetSettingsState(false);
             _hud.SetResultsState(false);
             _hud.SetRulesState(false);
+            _hud.SetLevelSelectState(false, unlocked, _levels.Count);
             _hud.SetProgress(0, 0);
+            _hud.SetRunStats(0, _totalScore);
             UpdatePoolStats();
         }
 
@@ -265,6 +281,8 @@ namespace SystemBreachOverdrive
 
         private void StartNewGame()
         {
+            _totalScore = 0;
+            _quickCombo = 1;
             StartLevel(0);
         }
 
@@ -280,6 +298,11 @@ namespace SystemBreachOverdrive
             if (_isRulesOpen)
             {
                 CloseRules();
+            }
+
+            if (_isLevelSelectOpen)
+            {
+                CloseLevelSelect();
             }
 
             _isSettingsOpen = true;
@@ -325,6 +348,11 @@ namespace SystemBreachOverdrive
 
         private void OpenRules()
         {
+            if (_isLevelSelectOpen)
+            {
+                CloseLevelSelect();
+            }
+
             _isRulesOpen = true;
             _hud.SetRulesState(true);
             _hud.SetMenuState(false);
@@ -336,6 +364,64 @@ namespace SystemBreachOverdrive
             }
 
             _hud.SetStatus("RULES");
+        }
+
+        private void OpenLevelSelect()
+        {
+            if (!_isOnStartScreen)
+            {
+                return;
+            }
+
+            if (_isSettingsOpen)
+            {
+                CloseSettings();
+            }
+
+            if (_isRulesOpen)
+            {
+                CloseRules();
+            }
+
+            var unlocked = LoadUnlockedLevel();
+            _isLevelSelectOpen = true;
+            _hud.SetStartScreenState(false, unlocked > 0, unlocked + 1, _levels.Count);
+            _hud.SetLevelSelectState(true, unlocked, _levels.Count);
+            _hud.SetStatus("LEVEL SELECT");
+        }
+
+        private void CloseLevelSelect()
+        {
+            if (!_isLevelSelectOpen)
+            {
+                return;
+            }
+
+            var unlocked = LoadUnlockedLevel();
+            _isLevelSelectOpen = false;
+            _hud.SetLevelSelectState(false, unlocked, _levels.Count);
+            _hud.SetStartScreenState(true, unlocked > 0, unlocked + 1, _levels.Count);
+            _hud.SetStatus("READY");
+        }
+
+        private void StartSelectedLevel(int levelIndex)
+        {
+            var unlocked = LoadUnlockedLevel();
+            if (levelIndex < 0 || levelIndex >= _levels.Count || levelIndex > unlocked)
+            {
+                return;
+            }
+
+            StartLevel(levelIndex);
+        }
+
+        private void ExitGame()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
         }
 
         private void CloseRules()
@@ -527,6 +613,7 @@ namespace SystemBreachOverdrive
             _lastResultSuccess = true;
             _levelScore = CalculateScore(success: true, out var rating);
             _totalScore += _levelScore;
+            _hud.SetRunStats(_rotationCount, _totalScore);
 
             var nextLevel = _currentLevelIndex + 1;
             _pendingNextLevel = Mathf.Min(nextLevel, _levels.Count - 1);
@@ -559,6 +646,7 @@ namespace SystemBreachOverdrive
             _lastResultSuccess = false;
             _quickCombo = 1;
             _levelScore = CalculateScore(success: false, out var rating);
+            _hud.SetRunStats(_rotationCount, _totalScore);
             ShowResults("SYSTEM FAILURE", rating, false);
         }
 

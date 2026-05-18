@@ -16,6 +16,7 @@ namespace SystemBreachOverdrive
         private Text _statusText;
         private Text _progressText;
         private Text _poolText;
+        private Text _runStatsText;
         private Button _pauseButton;
         private Button _restartButton;
         private Button _menuButton;
@@ -25,13 +26,19 @@ namespace SystemBreachOverdrive
         private Button _menuMainMenuButton;
         private Button _menuSettingsButton;
         private Button _menuRulesButton;
+        private Button _menuExitButton;
         private RectTransform _startOverlay;
         private Button _startContinueButton;
         private Button _startNewGameButton;
+        private Button _startLevelSelectButton;
         private Button _startResetProgressButton;
         private Button _startSettingsButton;
         private Button _startRulesButton;
+        private Button _startExitButton;
         private Text _startSubtitleText;
+        private RectTransform _levelSelectOverlay;
+        private Button[] _levelSelectButtons;
+        private Button _levelSelectBackButton;
         private RectTransform _settingsOverlay;
         private Slider _volumeSlider;
         private Button _settingsBackButton;
@@ -57,6 +64,10 @@ namespace SystemBreachOverdrive
             Action onStartContinue,
             Action onStartNewGame,
             Action onStartResetProgress,
+            Action onOpenLevelSelect,
+            Action<int> onSelectLevel,
+            Action onCloseLevelSelect,
+            Action onExitGame,
             Action onOpenSettings,
             Action onCloseSettings,
             Action<float> onVolumeChanged,
@@ -76,15 +87,28 @@ namespace SystemBreachOverdrive
             _menuMainMenuButton.onClick.AddListener(() => onMenuMain?.Invoke());
             _menuSettingsButton.onClick.AddListener(() => onOpenSettings?.Invoke());
             _menuRulesButton.onClick.AddListener(() => onOpenRules?.Invoke());
+            _menuExitButton.onClick.AddListener(() => onExitGame?.Invoke());
             _startContinueButton.onClick.AddListener(() => onStartContinue?.Invoke());
             _startNewGameButton.onClick.AddListener(() => onStartNewGame?.Invoke());
+            _startLevelSelectButton.onClick.AddListener(() => onOpenLevelSelect?.Invoke());
             _startResetProgressButton.onClick.AddListener(() => onStartResetProgress?.Invoke());
             _startSettingsButton.onClick.AddListener(() => onOpenSettings?.Invoke());
             _startRulesButton.onClick.AddListener(() => onOpenRules?.Invoke());
+            _startExitButton.onClick.AddListener(() => onExitGame?.Invoke());
+            _levelSelectBackButton.onClick.AddListener(() => onCloseLevelSelect?.Invoke());
             _settingsBackButton.onClick.AddListener(() => onCloseSettings?.Invoke());
             _resultsRetryButton.onClick.AddListener(() => onResultsRetry?.Invoke());
             _resultsNextButton.onClick.AddListener(() => onResultsNext?.Invoke());
             _rulesBackButton.onClick.AddListener(() => onCloseRules?.Invoke());
+
+            if (_levelSelectButtons != null)
+            {
+                for (var i = 0; i < _levelSelectButtons.Length; i++)
+                {
+                    var levelIndex = i;
+                    _levelSelectButtons[i].onClick.AddListener(() => onSelectLevel?.Invoke(levelIndex));
+                }
+            }
 
             _volumeSlider.onValueChanged.AddListener(value =>
             {
@@ -144,6 +168,16 @@ namespace SystemBreachOverdrive
                 : "POOL: -";
         }
 
+        public void SetRunStats(int rotations, int totalScore)
+        {
+            if (_runStatsText == null)
+            {
+                return;
+            }
+
+            _runStatsText.text = $"MOVES: {Mathf.Max(0, rotations)}   TOTAL SCORE: {Mathf.Max(0, totalScore)}";
+        }
+
         public void SetPauseState(bool paused)
         {
             var text = _pauseButton.GetComponentInChildren<Text>();
@@ -174,6 +208,17 @@ namespace SystemBreachOverdrive
             _startSubtitleText.text = hasContinue
                 ? $"CONTINUE AVAILABLE: LEVEL {continueLevel}/{totalLevels}"
                 : "NEW SESSION INITIALIZED";
+        }
+
+        public void SetLevelSelectState(bool isVisible, int unlockedLevelIndex, int totalLevels)
+        {
+            if (_levelSelectOverlay == null)
+            {
+                return;
+            }
+
+            _levelSelectOverlay.gameObject.SetActive(isVisible);
+            ConfigureLevelSelect(unlockedLevelIndex, totalLevels);
         }
 
         public void SetSettingsState(bool isVisible)
@@ -307,6 +352,8 @@ namespace SystemBreachOverdrive
             _progressText.fontSize = 16;
             _poolText = CreateAnchoredLabel(topPanel, "PoolText", "POOL: -", font, TextAnchor.MiddleLeft, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(16f, -22f), new Vector2(420f, 0f));
             _poolText.fontSize = 14;
+            _runStatsText = CreateAnchoredLabel(topPanel, "RunStatsText", "MOVES: 0   TOTAL SCORE: 0", font, TextAnchor.MiddleRight, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(1f, 0.5f), new Vector2(-16f, -22f), new Vector2(360f, 0f));
+            _runStatsText.fontSize = 14;
 
             var buttonsPanel = CreatePanel(canvasObject.transform, "ButtonsPanel", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-240f, 50f), new Vector2(420f, 70f), new Color(0f, 0f, 0f, 0.35f));
 
@@ -316,23 +363,33 @@ namespace SystemBreachOverdrive
             _settingsButton = CreateButton(buttonsPanel, "SettingsButton", "SETTINGS", font, new Vector2(150f, 0f), new Vector2(100f, 38f));
 
             _menuOverlay = CreatePanel(canvasObject.transform, "MenuOverlay", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.90f));
-            var menuCard = CreateCard(_menuOverlay, "MenuCard", new Vector2(440f, 380f));
-            CreateLabel(menuCard, "MenuTitle", "PAUSE MENU", font, TextAnchor.MiddleCenter, new Vector2(0f, 130f), new Vector2(320f, 44f));
-            _menuResumeButton = CreateButton(menuCard, "MenuResumeButton", "RESUME", font, new Vector2(0f, 55f), new Vector2(240f, 52f));
-            _menuMainMenuButton = CreateButton(menuCard, "MenuMainButton", "MAIN MENU", font, new Vector2(0f, -7f), new Vector2(240f, 52f));
-            _menuSettingsButton = CreateButton(menuCard, "MenuSettingsButton", "SETTINGS", font, new Vector2(0f, -69f), new Vector2(240f, 52f));
-            _menuRulesButton = CreateButton(menuCard, "MenuRulesButton", "RULES", font, new Vector2(0f, -131f), new Vector2(240f, 52f));
+            var menuCard = CreateCard(_menuOverlay, "MenuCard", new Vector2(440f, 450f));
+            CreateLabel(menuCard, "MenuTitle", "PAUSE MENU", font, TextAnchor.MiddleCenter, new Vector2(0f, 165f), new Vector2(320f, 44f));
+            _menuResumeButton = CreateButton(menuCard, "MenuResumeButton", "RESUME", font, new Vector2(0f, 92f), new Vector2(240f, 52f));
+            _menuMainMenuButton = CreateButton(menuCard, "MenuMainButton", "MAIN MENU", font, new Vector2(0f, 30f), new Vector2(240f, 52f));
+            _menuSettingsButton = CreateButton(menuCard, "MenuSettingsButton", "SETTINGS", font, new Vector2(0f, -32f), new Vector2(240f, 52f));
+            _menuRulesButton = CreateButton(menuCard, "MenuRulesButton", "RULES", font, new Vector2(0f, -94f), new Vector2(240f, 52f));
+            _menuExitButton = CreateButton(menuCard, "MenuExitButton", "EXIT", font, new Vector2(0f, -156f), new Vector2(240f, 52f));
 
             _startOverlay = CreatePanel(canvasObject.transform, "StartOverlay", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.92f));
-            var startCard = CreateCard(_startOverlay, "StartCard", new Vector2(620f, 610f));
-            CreateLabel(startCard, "StartTitle", "SYSTEM BREACH: OVERDRIVE", font, TextAnchor.MiddleCenter, new Vector2(0f, 230f), new Vector2(580f, 60f));
-            _startSubtitleText = CreateLabel(startCard, "StartSubtitle", "", font, TextAnchor.MiddleCenter, new Vector2(0f, 185f), new Vector2(520f, 40f));
-            CreateLabel(startCard, "StartHint", "LMB: ROTATE  |  R: RESTART  |  ESC: MENU", font, TextAnchor.MiddleCenter, new Vector2(0f, -230f), new Vector2(520f, 34f));
-            _startContinueButton = CreateButton(startCard, "StartContinueButton", "CONTINUE", font, new Vector2(0f, 95f), new Vector2(270f, 52f));
-            _startNewGameButton = CreateButton(startCard, "StartNewGameButton", "NEW GAME", font, new Vector2(0f, 28f), new Vector2(270f, 52f));
-            _startResetProgressButton = CreateButton(startCard, "StartResetButton", "RESET PROGRESS", font, new Vector2(0f, -39f), new Vector2(270f, 52f));
-            _startSettingsButton = CreateButton(startCard, "StartSettingsButton", "SETTINGS", font, new Vector2(0f, -106f), new Vector2(270f, 52f));
-            _startRulesButton = CreateButton(startCard, "StartRulesButton", "RULES", font, new Vector2(0f, -173f), new Vector2(270f, 52f));
+            var startCard = CreateCard(_startOverlay, "StartCard", new Vector2(620f, 660f));
+            CreateLabel(startCard, "StartTitle", "SYSTEM BREACH: OVERDRIVE", font, TextAnchor.MiddleCenter, new Vector2(0f, 260f), new Vector2(580f, 60f));
+            _startSubtitleText = CreateLabel(startCard, "StartSubtitle", "", font, TextAnchor.MiddleCenter, new Vector2(0f, 214f), new Vector2(520f, 40f));
+            CreateLabel(startCard, "StartHint", "LMB: ROTATE  |  R: RESTART  |  ESC: MENU", font, TextAnchor.MiddleCenter, new Vector2(0f, -282f), new Vector2(520f, 34f));
+            _startContinueButton = CreateButton(startCard, "StartContinueButton", "CONTINUE", font, new Vector2(0f, 134f), new Vector2(270f, 48f));
+            _startNewGameButton = CreateButton(startCard, "StartNewGameButton", "NEW GAME", font, new Vector2(0f, 78f), new Vector2(270f, 48f));
+            _startLevelSelectButton = CreateButton(startCard, "StartLevelSelectButton", "LEVEL SELECT", font, new Vector2(0f, 22f), new Vector2(270f, 48f));
+            _startResetProgressButton = CreateButton(startCard, "StartResetButton", "RESET PROGRESS", font, new Vector2(0f, -34f), new Vector2(270f, 48f));
+            _startSettingsButton = CreateButton(startCard, "StartSettingsButton", "SETTINGS", font, new Vector2(0f, -90f), new Vector2(270f, 48f));
+            _startRulesButton = CreateButton(startCard, "StartRulesButton", "RULES", font, new Vector2(0f, -146f), new Vector2(270f, 48f));
+            _startExitButton = CreateButton(startCard, "StartExitButton", "EXIT", font, new Vector2(0f, -202f), new Vector2(270f, 48f));
+
+            _levelSelectOverlay = CreatePanel(canvasObject.transform, "LevelSelectOverlay", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.93f));
+            var levelSelectCard = CreateCard(_levelSelectOverlay, "LevelSelectCard", new Vector2(790f, 590f));
+            CreateLabel(levelSelectCard, "LevelSelectTitle", "LEVEL SELECT", font, TextAnchor.MiddleCenter, new Vector2(0f, 245f), new Vector2(420f, 52f));
+            CreateLabel(levelSelectCard, "LevelSelectHint", "LOCKED LEVELS OPEN AFTER COMPLETION", font, TextAnchor.MiddleCenter, new Vector2(0f, 205f), new Vector2(560f, 34f));
+            _levelSelectButtons = CreateLevelSelectButtons(levelSelectCard, font);
+            _levelSelectBackButton = CreateButton(levelSelectCard, "LevelSelectBackButton", "BACK", font, new Vector2(0f, -235f), new Vector2(230f, 52f));
 
             _settingsOverlay = CreatePanel(canvasObject.transform, "SettingsOverlay", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, new Color(0f, 0f, 0f, 0.92f));
             var settingsCard = CreateCard(_settingsOverlay, "SettingsCard", new Vector2(640f, 360f));
@@ -377,9 +434,59 @@ namespace SystemBreachOverdrive
 
             SetMenuState(false);
             SetStartScreenState(true, false, 1, 1);
+            SetLevelSelectState(false, 0, 1);
             SetSettingsState(false);
             SetResultsState(false);
             SetRulesState(false);
+        }
+
+        private void ConfigureLevelSelect(int unlockedLevelIndex, int totalLevels)
+        {
+            if (_levelSelectButtons == null)
+            {
+                return;
+            }
+
+            var visibleLevels = Mathf.Clamp(totalLevels, 0, _levelSelectButtons.Length);
+            var unlocked = Mathf.Clamp(unlockedLevelIndex, 0, Mathf.Max(0, visibleLevels - 1));
+
+            for (var i = 0; i < _levelSelectButtons.Length; i++)
+            {
+                var button = _levelSelectButtons[i];
+                var isVisible = i < visibleLevels;
+                button.gameObject.SetActive(isVisible);
+
+                if (!isVisible)
+                {
+                    continue;
+                }
+
+                var isUnlocked = i <= unlocked;
+                button.interactable = isUnlocked;
+                SetButtonLabel(button, isUnlocked ? $"LEVEL {i + 1:00}" : $"LOCKED {i + 1:00}");
+            }
+        }
+
+        private static Button[] CreateLevelSelectButtons(Transform parent, Font font)
+        {
+            const int rows = 4;
+            const int columns = 5;
+
+            var buttons = new Button[rows * columns];
+            var startX = -256f;
+            var startY = 140f;
+            var stepX = 128f;
+            var stepY = 66f;
+
+            for (var i = 0; i < buttons.Length; i++)
+            {
+                var row = i / columns;
+                var column = i % columns;
+                var position = new Vector2(startX + column * stepX, startY - row * stepY);
+                buttons[i] = CreateButton(parent, $"LevelButton_{i + 1:00}", $"LEVEL {i + 1:00}", font, position, new Vector2(112f, 48f));
+            }
+
+            return buttons;
         }
 
         private static void EnsureEventSystem()
@@ -790,6 +897,20 @@ namespace SystemBreachOverdrive
             text.fontSize = 19;
 
             return button;
+        }
+
+        private static void SetButtonLabel(Button button, string label)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var text = button.GetComponentInChildren<Text>();
+            if (text != null)
+            {
+                text.text = label;
+            }
         }
     }
 }
