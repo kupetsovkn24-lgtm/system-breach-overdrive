@@ -152,37 +152,47 @@ HUD оновлюється під час старту рівня, обертан
 
 ## 8. Скріншоти
 
-До фінальної здачі потрібно додати 5 скріншотів:
+До звіту додано 5 скріншотів із демонстрацією основних екранів demo-версії.
 
 ### Скріншот 1. Головне меню
 
-Файл: `lab5/Screenshot_1_Lab5_MainMenu.jpg`
+Файл: `lab5/Screenshot_1.jpg`
 
 На скріншоті має бути видно кнопки `NEW GAME`, `LEVEL SELECT`, `SETTINGS`, `RULES`, `EXIT`.
 
+![Скріншот 1. Головне меню](Screenshot_1.jpg)
+
 ### Скріншот 2. Вибір рівня
 
-Файл: `lab5/Screenshot_2_Lab5_LevelSelect.jpg`
+Файл: `lab5/Screenshot_2.jpg`
 
 На скріншоті має бути видно екран `LEVEL SELECT`, доступні рівні та заблоковані рівні `LOCKED`.
 
+![Скріншот 2. Вибір рівня](Screenshot_2.jpg)
+
 ### Скріншот 3. Play Mode з активним HUD
 
-Файл: `lab5/Screenshot_3_Lab5_PlayModeHUD.jpg`
+Файл: `lab5/Screenshot_3.jpg`
 
 На скріншоті має бути видно ігрове поле, таймер, номер рівня, `OBJECTIVE NODES`, `MOVES`, `TOTAL SCORE` та `POOL`.
 
+![Скріншот 3. Play Mode з активним HUD](Screenshot_3.jpg)
+
 ### Скріншот 4. Pause menu
 
-Файл: `lab5/Screenshot_4_Lab5_PauseMenu.jpg`
+Файл: `lab5/Screenshot_4.jpg`
 
 На скріншоті має бути видно pause menu з кнопками `RESUME`, `MAIN MENU`, `SETTINGS`, `RULES`, `EXIT`.
 
+![Скріншот 4. Pause menu](Screenshot_4.jpg)
+
 ### Скріншот 5. Result screen
 
-Файл: `lab5/Screenshot_5_Lab5_ResultScreen.jpg`
+Файл: `lab5/Screenshot_5.jpg`
 
 На скріншоті має бути видно результат проходження рівня, рахунок, рейтинг, кількість ходів і кнопки `RETRY` / `NEXT`.
+
+![Скріншот 5. Result screen](Screenshot_5.jpg)
 
 ## 9. Посилання на репозиторій та коміт
 
